@@ -7,7 +7,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
 import java.util.Calendar;
@@ -75,7 +74,7 @@ public class CalendarView extends View {
         screenWidth = getResources().getDisplayMetrics().widthPixels;
         cellHeight = (14 + 30) * getResources().getDisplayMetrics().density;
         cellWidth = getResources().getDisplayMetrics().widthPixels / 7;
-        screenWidth = cellWidth * 7;
+
         weekTextPaint = new Paint();
         weekTextPaint.setTextSize(14 * getResources().getDisplayMetrics().density);
         weekTextPaint.setColor(Color.MAGENTA);
@@ -172,13 +171,10 @@ public class CalendarView extends View {
         for (int i = 1; i <= monthDay; i++) {
             float baseline1 = RenderUtil.getBaseline(0, cellHeight, textPaint);
             int start = (firstDayOfMonthInWeek + i - 1) * cellWidth;
-            float startHeight = (start / screenWidth + 1) * (cellHeight)
+            float startHeight = ((start + cellWidth) / screenWidth + 1) * (cellHeight)
                     + (cellHeight - baseline1) * 0.5f;
-            float startWidth = start % screenWidth -
+            float startWidth = start % (cellWidth * 7) -
                     textPaint.measureText(i + "") * 0.5f + cellWidth * 0.5f;
-            Log.e("ABC", i + ": " + start +
-                    ": " + startWidth + ": " + startHeight
-                    + ": " + start % screenWidth + ": " + textPaint.measureText(i + ""));
             if (isThisMonth && i == today)
                 canvas.drawText(i + ""
                         , startWidth
