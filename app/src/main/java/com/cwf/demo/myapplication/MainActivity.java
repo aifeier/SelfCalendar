@@ -11,10 +11,10 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import java.util.Calendar;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private EditText text;
+    private CalendarView calendarView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,18 +26,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         intent.putExtra(DownloadService.KEY_URL, "http://img.tuku.cn/file_big/201503/c066e56887e24a759688b38595b91f12.jpg");
         intent.putExtra(DownloadService.KEY_NAME, System.currentTimeMillis() + ".jpg");
 //        startService(intent);
-        Toast.makeText(this, "" + getDayOfMonth(), Toast.LENGTH_SHORT).show();
 
 //        downFile(this
 //                , "http://img.tuku.cn/file_big/201503/c066e56887e24a759688b38595b91f12.jpg"
 //                , System.currentTimeMillis() + ".jpg");
+        calendarView = (CalendarView) findViewById(R.id.calendar_view);
+        calendarView.setItemClickListener(new CalendarView.ItemClickListener() {
+            @Override
+            public void onClick(int year, int month, int day) {
+                Toast.makeText(MainActivity.this, year + "_" + month + "_" + day, Toast.LENGTH_SHORT).show();
+            }
+        });
+        Calendar c = Calendar.getInstance();
+        c.add(Calendar.MONTH, 8);
+//        calendarView.setCalendar(c);
     }
 
-    public static int getDayOfMonth() {
-        Calendar aCalendar = Calendar.getInstance(Locale.CHINA);
-        int day = aCalendar.getActualMaximum(Calendar.DATE);
-        return day;
-    }
 
     private void downFile(Context mContext, String downloadUrl, String fileName) {
         //创建下载任务,downloadUrl就是下载链接

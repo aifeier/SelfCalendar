@@ -7,7 +7,10 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 
 import java.util.Calendar;
 
@@ -42,15 +45,19 @@ public class CalendarView extends View {
     /*是否是当前月*/
     private boolean isThisMonth = true;
 
-    private int curStartIndex;
+    /*当前日期*/
+    private int curYear;
+    private int curMonth;
+    private int curDay;
 
-    private int curEndIndex;
+    private ItemClickListener itemClickListener;
 
-    private int todayIndex;
-
-    private int[] date = new int[31];
 
     private Calendar calendar;
+
+    private float textSize;
+
+    private float density;
 
 
     public CalendarView(Context context) {
@@ -68,41 +75,48 @@ public class CalendarView extends View {
 
     private void init(Context context, AttributeSet attrs, int defStyleAttr) {
         calendar = Calendar.getInstance();
-        calendar.add(Calendar.MONTH, -4);
-        today = calendar.get(Calendar.DAY_OF_MONTH);
-        isThisMonth = true;
+//        calendar.add(Calendar.MONTH, -4);
+        density = getResources().getDisplayMetrics().density;
+        textSize = 14 * density;
         screenWidth = getResources().getDisplayMetrics().widthPixels;
-        cellHeight = (14 + 30) * getResources().getDisplayMetrics().density;
+//        cellHeight = (textSize + 30) * density;
         cellWidth = getResources().getDisplayMetrics().widthPixels / 7;
+        cellHeight = cellWidth;
+        ViewGroup.MarginLayoutParams marginLayoutParams = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        marginLayoutParams.setMargins((screenWidth - 7 * cellWidth) / 2, 0, (screenWidth - 7 * cellWidth) / 2, 0);
+        setLayoutParams(marginLayoutParams);
 
         weekTextPaint = new Paint();
-        weekTextPaint.setTextSize(14 * getResources().getDisplayMetrics().density);
+        weekTextPaint.setTextSize(textSize);
         weekTextPaint.setColor(Color.MAGENTA);
         weekTextPaint.setAntiAlias(true);
 
         textPaint = new TextPaint();
-        textPaint.setTextSize(12 * getResources().getDisplayMetrics().density);
+        textPaint.setTextSize(textSize);
         textPaint.setColor(Color.BLACK);
         textPaint.setAntiAlias(true);
         textPaint.setTextAlign(Paint.Align.CENTER);
 
         bluePaint = new Paint();
-        bluePaint.setTextSize(12 * getResources().getDisplayMetrics().density);
+        bluePaint.setTextSize(textSize);
         bluePaint.setColor(Color.BLUE);
-        bluePaint.setStrokeCap(Paint.Cap.ROUND);
+        bluePaint.setStyle(Paint.Style.STROKE);
+        bluePaint.setStrokeWidth(textSize / 15);
         bluePaint.setAntiAlias(true);
 
         whitePaint = new Paint();
-        whitePaint.setTextSize(12 * getResources().getDisplayMetrics().density);
+        whitePaint.setTextSize(textSize);
         whitePaint.setColor(Color.WHITE);
 
         blackPaint = new Paint();
-        blackPaint.setTextSize(12 * getResources().getDisplayMetrics().density);
+        blackPaint.setTextSize(textSize);
         blackPaint.setColor(Color.BLACK);
-        blackPaint.setStrokeCap(Paint.Cap.ROUND);
+        blackPaint.setStyle(Paint.Style.STROKE);
+        blackPaint.setStrokeWidth(textSize / 15);
+        blackPaint.setAntiAlias(true);
 
         grayPaint = new Paint();
-        grayPaint.setTextSize(12 * getResources().getDisplayMetrics().density);
+        grayPaint.setTextSize(textSize);
         grayPaint.setColor(Color.GRAY);
         grayPaint.setStrokeCap(Paint.Cap.ROUND);
         initDate();
@@ -112,6 +126,14 @@ public class CalendarView extends View {
     }
 
     private void initDate() {
+        today = calendar.get(Calendar.DAY_OF_MONTH);
+        curYear = calendar.get(Calendar.YEAR);
+        curMonth = calendar.get(Calendar.MONTH) + 1;
+        curDay = today;
+        if (calendar.get(Calendar.MONTH) == Calendar.getInstance().get(Calendar.MONTH))
+            isThisMonth = true;
+        else
+            isThisMonth = false;
         Calendar c = calendar;
         c.set(Calendar.DAY_OF_MONTH, 1); // 变为本月第一天
         firstDayOfMonthInWeek = c.get(Calendar.DAY_OF_WEEK) - 1;
@@ -149,7 +171,7 @@ public class CalendarView extends View {
         } else if (dayOfWeek == 1) {
             numberOfDaysExceptFirstLine = daysOfMonth - 1;
         }
-        int lines = 2 + numberOfDaysExceptFirstLine / 7 + (numberOfDaysExceptFirstLine % 7 == 0 ? 0 : 1);
+        int lines = 3 + numberOfDaysExceptFirstLine / 7 + (numberOfDaysExceptFirstLine % 7 == 0 ? 0 : 1);
         return (int) (cellHeight * lines);
     }
 
@@ -170,34 +192,82 @@ public class CalendarView extends View {
 
         for (int i = 1; i <= monthDay; i++) {
             float baseline1 = RenderUtil.getBaseline(0, cellHeight, textPaint);
-            int start = (firstDayOfMonthInWeek + i - 1) * cellWidth;
+            int start = (firstDayOfMonthInWeek + i - 2) * cellWidth;
             float startHeight = ((start + cellWidth) / screenWidth + 1) * (cellHeight)
                     + (cellHeight - baseline1) * 0.5f;
-            float startWidth = start % (cellWidth * 7) -
-                    textPaint.measureText(i + "") * 0.5f + cellWidth * 0.5f;
-            if (isThisMonth && i == today)
-                canvas.drawText(i + ""
-                        , startWidth
-                        , startHeight, bluePaint);
-            else
+            float startWidth = start % (cellWidth * 7)
+                    - textPaint.measureText(i + "") * 0.5f + cellWidth * 0.5f;
+            if (isThisMonth && i == today) {
                 canvas.drawText(i + ""
                         , startWidth
                         , startHeight, textPaint);
+                canvas.drawCircle(startWidth, startHeight - cellWidth / 10, cellWidth / 4, bluePaint);
+            } else {
+                canvas.drawText(i + ""
+                        , startWidth
+                        , startHeight, textPaint);
+            }
         }
     }
 
-    private void drawCircle(Canvas canvas, int i, Paint paint, float height) {
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            curDay = getCheckDay(event.getX(), event.getY());
+        } else if (event.getAction() == MotionEvent.ACTION_UP) {
+            if (curDay == getCheckDay(event.getX(), event.getY())) {
+                if (curDay > 0) {
+                    if (itemClickListener != null)
+                        itemClickListener.onClick(curYear, curMonth, curDay);
+                }
+            }
+        }
+        Log.e("onTouch", curYear + ":" + curMonth + ":" + curDay + "");
+        return true;
     }
 
-    private void drawText(Canvas canvas, int i, Paint paint, String date) {
 
+    /*根据点击的x,y坐标获取日期*/
+    private int getCheckDay(float x, float y) {
+        if (y < cellHeight) {
+            return -1;
+        }
+        int line = (int) ((y - cellHeight / 2) / cellHeight);
+        int column = (int) (x / cellWidth);
+        int day = line * 7 + column - firstDayOfMonthInWeek + 2;
+        return day;
     }
 
+    /*获取一个月有几天*/
     private int getDayOfMonth() {
-//        Calendar aCalendar = Calendar.getInstance(Locale.CHINA);
         int day = calendar.getActualMaximum(Calendar.DATE);
         return day;
+    }
+
+
+    /*设置显示的月份*/
+    public Calendar getCalendar() {
+        return calendar;
+    }
+
+    public void setCalendar(Calendar calendar) {
+        this.calendar = calendar;
+        initDate();
+        invalidate();
+    }
+
+    /*设置日期点击事件*/
+    public ItemClickListener getItemClickListener() {
+        return itemClickListener;
+    }
+
+    public void setItemClickListener(ItemClickListener itemClickListener) {
+        this.itemClickListener = itemClickListener;
+    }
+
+    public interface ItemClickListener {
+        public void onClick(int year, int month, int day);
     }
 
 }
