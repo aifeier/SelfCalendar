@@ -75,6 +75,7 @@ public class CalendarView extends View {
 
     private void init(Context context, AttributeSet attrs, int defStyleAttr) {
         calendar = Calendar.getInstance();
+        today = calendar.get(Calendar.DAY_OF_MONTH);
 //        calendar.add(Calendar.MONTH, -4);
         density = getResources().getDisplayMetrics().density;
         textSize = 14 * density;
@@ -126,17 +127,19 @@ public class CalendarView extends View {
     }
 
     private void initDate() {
-        today = calendar.get(Calendar.DAY_OF_MONTH);
         curYear = calendar.get(Calendar.YEAR);
         curMonth = calendar.get(Calendar.MONTH) + 1;
-        curDay = today;
-        if (calendar.get(Calendar.MONTH) == Calendar.getInstance().get(Calendar.MONTH))
+        curDay = calendar.get(Calendar.DAY_OF_MONTH);
+        if (curMonth == Calendar.getInstance().get(Calendar.MONTH) + 1
+                && curYear == Calendar.getInstance().get(Calendar.YEAR))
             isThisMonth = true;
         else
             isThisMonth = false;
         Calendar c = calendar;
         c.set(Calendar.DAY_OF_MONTH, 1); // 变为本月第一天
         firstDayOfMonthInWeek = c.get(Calendar.DAY_OF_WEEK) - 1;
+        if (firstDayOfMonthInWeek == 0)
+            firstDayOfMonthInWeek = 7;
         monthDay = getDayOfMonth();
     }
 
@@ -187,6 +190,8 @@ public class CalendarView extends View {
 
         float baseline = RenderUtil.getBaseline(0, cellHeight, weekTextPaint);
         canvas.drawText(curYear + "-" + curMonth, screenWidth / 2 - weekTextPaint.measureText(curYear + curMonth + ""), baseline, weekTextPaint);
+        canvas.drawText("next", cellWidth * 6 - weekTextPaint.measureText("next"), baseline, weekTextPaint);
+        canvas.drawText("previous", cellWidth * 2 - weekTextPaint.measureText("previous"), baseline, weekTextPaint);
         baseline += cellHeight / 2;
         for (int i = 0; i < 7; i++) {
             float weekTextX = RenderUtil.getStartX(cellWidth * i + cellWidth * 0.5f, weekTextPaint, weekText[i]);
@@ -214,20 +219,57 @@ public class CalendarView extends View {
     }
 
 
+    private boolean next = false, previous = false;
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             curDay = getCheckDay(event.getX(), event.getY());
+            next = isNext(event.getX(), event.getY());
+            previous = isPrevious(event.getX(), event.getY());
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
-            if (curDay == getCheckDay(event.getX(), event.getY())) {
-                if (curDay > 0 && curDay <= monthDay) {
-                    if (itemClickListener != null)
-                        itemClickListener.onClick(curYear, curMonth, curDay);
-                }
+            if (curDay == getCheckDay(event.getX(), event.getY())
+                    && curDay > 0 && curDay <= monthDay) {
+                if (itemClickListener != null)
+                    itemClickListener.onClick(curYear, curMonth, curDay);
+            } else if (next && isNext(event.getX(), event.getY())) {
+                gotoNext();
+            } else if (previous && isPrevious(event.getX(), event.getY())) {
+                gotoPrevious();
             }
         }
         Log.e("onTouch", curYear + ":" + curMonth + ":" + curDay + "");
         return true;
+    }
+
+    private boolean isNext(float x, float y) {
+        if (x > cellWidth * 5 && y < cellHeight)
+            return true;
+        else
+            return false;
+    }
+
+    private boolean isPrevious(float x, float y) {
+        if (x < cellWidth * 2 && y < cellHeight)
+            return true;
+        else
+            return false;
+    }
+
+    private void gotoNext() {
+        calendar.add(Calendar.MONTH, 1);
+        refresh();
+    }
+
+    private void gotoPrevious() {
+        calendar.add(Calendar.MONTH, -1);
+        refresh();
+    }
+
+    private void refresh() {
+        initDate();
+        requestLayout();
+        invalidate();
     }
 
 
@@ -256,8 +298,7 @@ public class CalendarView extends View {
 
     public void setCalendar(Calendar calendar) {
         this.calendar = calendar;
-        initDate();
-        invalidate();
+        refresh();
     }
 
     /*设置日期点击事件*/

@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         calendarView.setItemClickListener(new CalendarView.ItemClickListener() {
             @Override
             public void onClick(int year, int month, int day) {
-                Toast.makeText(MainActivity.this, year + "_" + month + "_" + day, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, year + "-" + month + "-" + day, Toast.LENGTH_SHORT).show();
             }
         });
         Calendar c = Calendar.getInstance();
