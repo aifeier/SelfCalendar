@@ -79,9 +79,9 @@ public class CalendarView extends View {
         density = getResources().getDisplayMetrics().density;
         textSize = 14 * density;
         screenWidth = getResources().getDisplayMetrics().widthPixels;
-//        cellHeight = (textSize + 30) * density;
+        cellHeight = textSize + 30 * density;
         cellWidth = getResources().getDisplayMetrics().widthPixels / 7;
-        cellHeight = cellWidth;
+//        cellHeight = cellWidth;
         ViewGroup.MarginLayoutParams marginLayoutParams = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         marginLayoutParams.setMargins((screenWidth - 7 * cellWidth) / 2, 0, (screenWidth - 7 * cellWidth) / 2, 0);
         setLayoutParams(marginLayoutParams);
@@ -172,7 +172,7 @@ public class CalendarView extends View {
             numberOfDaysExceptFirstLine = daysOfMonth - 1;
         }
         int lines = 3 + numberOfDaysExceptFirstLine / 7 + (numberOfDaysExceptFirstLine % 7 == 0 ? 0 : 1);
-        return (int) (cellHeight * lines);
+        return (int) (cellHeight * lines - cellHeight / 2);
     }
 
     /**
@@ -184,7 +184,10 @@ public class CalendarView extends View {
         /**
          * render the head
          */
+
         float baseline = RenderUtil.getBaseline(0, cellHeight, weekTextPaint);
+        canvas.drawText(curYear + "-" + curMonth, screenWidth / 2 - weekTextPaint.measureText(curYear + curMonth + ""), baseline, weekTextPaint);
+        baseline += cellHeight / 2;
         for (int i = 0; i < 7; i++) {
             float weekTextX = RenderUtil.getStartX(cellWidth * i + cellWidth * 0.5f, weekTextPaint, weekText[i]);
             canvas.drawText(weekText[i], weekTextX, baseline, weekTextPaint);
@@ -194,7 +197,7 @@ public class CalendarView extends View {
             float baseline1 = RenderUtil.getBaseline(0, cellHeight, textPaint);
             int start = (firstDayOfMonthInWeek + i - 2) * cellWidth;
             float startHeight = ((start + cellWidth) / screenWidth + 1) * (cellHeight)
-                    + (cellHeight - baseline1) * 0.5f;
+                    + (cellHeight - baseline1) * 0.5f + cellHeight;
             float startWidth = start % (cellWidth * 7)
                     - textPaint.measureText(i + "") * 0.5f + cellWidth * 0.5f;
             if (isThisMonth && i == today) {
@@ -217,7 +220,7 @@ public class CalendarView extends View {
             curDay = getCheckDay(event.getX(), event.getY());
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
             if (curDay == getCheckDay(event.getX(), event.getY())) {
-                if (curDay > 0) {
+                if (curDay > 0 && curDay <= monthDay) {
                     if (itemClickListener != null)
                         itemClickListener.onClick(curYear, curMonth, curDay);
                 }
@@ -230,10 +233,10 @@ public class CalendarView extends View {
 
     /*根据点击的x,y坐标获取日期*/
     private int getCheckDay(float x, float y) {
-        if (y < cellHeight) {
+        if (y < cellHeight * 1.5f) {
             return -1;
         }
-        int line = (int) ((y - cellHeight / 2) / cellHeight);
+        int line = (int) ((y - cellHeight * 1.53f) / cellHeight);
         int column = (int) (x / cellWidth);
         int day = line * 7 + column - firstDayOfMonthInWeek + 2;
         return day;

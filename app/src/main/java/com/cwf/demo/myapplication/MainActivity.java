@@ -38,8 +38,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         Calendar c = Calendar.getInstance();
-        c.add(Calendar.MONTH, 8);
-//        calendarView.setCalendar(c);
+        c.add(Calendar.MONTH, -4);
+        calendarView.setCalendar(c);
     }
 
 
