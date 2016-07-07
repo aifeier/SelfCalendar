@@ -42,6 +42,7 @@ public class OkHttpClientManager {
     private Gson mGson;
     private final MediaType mMediaType = MediaType.parse("text/html, charset=utf-8");
     private static final MediaType MEDIA_TYPE_ATTACH = MediaType.parse("application/octet-stream");
+    private Call mCall;
 
     private OkHttpClientManager() {
 
@@ -199,7 +200,7 @@ public class OkHttpClientManager {
     }
 
     private String enqueue(Request request) throws IOException {
-        Response response = mOkHttpClient.newCall(request).execute();
+        Response response = getCall(request).execute();
         if (response.isSuccessful()) {
             return response.body().string();
         } else {
@@ -211,14 +212,14 @@ public class OkHttpClientManager {
     private void enqueueDownload(ResultCallBack resultCallBack, Request request, String destFileDir, String url) {
         resultCallBack.onStart();
         Log.e("OkHttpClientManager", request.url().toString());
-        mOkHttpClient.newCall(request).enqueue(getDownloadCallback(resultCallBack, destFileDir, url));
+        getCall(request).enqueue(getDownloadCallback(resultCallBack, destFileDir, url));
     }
 
     /*发送请求*/
     private void enqueue(ResultCallBack resultCallBack, Request request) {
         resultCallBack.onStart();
         Log.e("OkHttpClientManager", request.url().toString());
-        mOkHttpClient.newCall(request).enqueue(getCallback(resultCallBack));
+        getCall(request).enqueue(getCallback(resultCallBack));
     }
 
     private Callback getDownloadCallback(final ResultCallBack resultCallBack, final String destFileDir, final String url) {
@@ -308,6 +309,7 @@ public class OkHttpClientManager {
 
     private void sendSuccess(final ResultCallBack resultCallBack, final String result) {
         Log.e("OkHttpClientManager", result);
+        mCall = null;
         mDelivery.post(new Runnable() {
             @Override
             public void run() {
@@ -318,7 +320,8 @@ public class OkHttpClientManager {
     }
 
     private void sendFailure(final ResultCallBack resultCallBack, final Exception e) {
-        Log.e("OkHttpClientManager", e.getMessage());
+        Log.e("OkHttpClientManager", e.getMessage() != null ? e.getMessage() : "null");
+        mCall = null;
         mDelivery.post(new Runnable() {
             @Override
             public void run() {
@@ -326,5 +329,16 @@ public class OkHttpClientManager {
                 resultCallBack.onStop();
             }
         });
+    }
+
+    private Call getCall(Request request) {
+        mCall = mOkHttpClient.newCall(request);
+        return mCall;
+    }
+
+    public void cancel() {
+        Log.d("OkHttpClientManager", "cancel call");
+        if (mCall != null)
+            mCall.cancel();
     }
 }

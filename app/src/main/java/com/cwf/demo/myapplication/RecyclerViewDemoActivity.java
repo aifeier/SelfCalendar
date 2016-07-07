@@ -146,4 +146,10 @@ public class RecyclerViewDemoActivity extends AppCompatActivity {
     interface OnItemClickListener {
         void onClick(int position);
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        OkHttpClientManager.getInstance().cancel();
+    }
 }
