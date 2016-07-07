@@ -200,11 +200,14 @@ public class OkHttpClientManager {
     }
 
     private String enqueue(Request request) throws IOException {
+        Log.e("OkHttpClientManager", request.url().toString());
         Response response = getCall(request).execute();
-        if (response.isSuccessful()) {
-            return response.body().string();
-        } else {
-            return response.message();
+        try {
+            String e = response.body().string();
+            Log.e("OkHttpClientManager", e);
+            return e;
+        } catch (Exception var2) {
+            return var2.getMessage() != null ? var2.getMessage() : "服务器没有返回数据";
         }
     }
 
@@ -248,6 +251,12 @@ public class OkHttpClientManager {
                     }
                     if (file != null && !file.exists())
                         file.createNewFile();
+                    if (file.length() == allSize) {
+                        call.cancel();
+                        updateFileSize(resultCallBack, allSize, allSize);
+                        sendSuccess(resultCallBack, file.getAbsolutePath());
+                        return;
+                    }
                     fos = new FileOutputStream(file);
                     while ((len = is.read(buf)) != -1) {
                         fos.write(buf, 0, len);
